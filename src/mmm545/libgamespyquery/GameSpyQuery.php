@@ -6,6 +6,8 @@ namespace mmm545\libgamespyquery;
 
 use function pack;
 use function strlen;
+use function substr;
+use function fread;
 
 /*
  * The reason behind this is that the byte order of packing an int to a binary string is
