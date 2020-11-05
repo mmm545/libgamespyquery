@@ -41,7 +41,7 @@ class GameSpyQuery
     
     private $socket;
 
-    private $status;
+    private $statusRaw;
 
     /**
      * @param string $ip IP to query
@@ -76,7 +76,7 @@ class GameSpyQuery
             throw new GameSpyQueryException("Response is empty"); //tbh i think i'm abusing exceptions
         }
 
-        $this->status = explode("\x00\x00\x01\x70\x6C\x61\x79\x65\x72\x5F\x00\x00", $this->retrieveStatus($sessionId, (int)$challengeToken));
+        $this->statusRaw = $this->retrieveStatus($sessionId, (int)$challengeToken);
     }
 
     /**
@@ -134,22 +134,39 @@ class GameSpyQuery
     /**
      * Gets data by it's key
      * @param string $key The key of the data you want to get
-     * @return string|string[] The return can be either a single string or an array, depending on what data you want
+     * @return string|string[] The return can be either a string or an array, depending on what data you want to get. Returns false if the key can't be found
      */
-    //TODO: parse plugins list
-    public function getValue(string $key){
-        $data = explode("\x00", $this->status[0]);
-
-        if($key === "players"){
-            return explode("\x00", substr($this->status[1], 0, -2));
+    public function get(string $key){
+        if(!isset($this->statusRaw)){
+            return false;
         }
 
-        $pos = array_search($key, $data);
-        if($pos !== false){
-            return $data[$pos+1];
-        }
+        $status = explode("\x00\x00\x01\x70\x6C\x61\x79\x65\x72\x5F\x00\x00", $this->statusRaw);
+        $data = explode("\x00", $status[0]);
 
-        return "";
+        switch($key){
+            case "players":
+                return explode("\x00", substr($status[1], 0, -2));
+
+            case "plugins":
+                $plugins = $data[array_search("plugins", $data) + 1]; // calling getValue("plugins") here will cause an infinite loop
+                $plugins = explode("; ", str_replace($this->getValue("server_engine").": ", "", $plugins));
+                return $plugins;
+
+            default:
+                $pos = array_search($key, $data);
+                if($pos !== false){
+                    return $data[$pos + 1];
+                }
+                return false;
+        }
+    }
+
+    /**
+     * @return string The raw status response from the server, or false if the status data is null
+     */
+    public function getStatusRaw(){
+        return isset($this->statusRaw) ? $this->statusRaw : false;
     }
 
     /**
