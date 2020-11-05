@@ -1,0 +1,10 @@
+--- # Poggit-CI Manifest. Open the CI at https://poggit.pmmp.io/ci/mmm545/libgamespyquery
+build-by-default: true
+branches:
+- master
+projects:
+  libgamespyquery:
+    path: ""
+    model: virion
+    type: library
+...
