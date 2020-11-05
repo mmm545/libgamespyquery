@@ -1,0 +1,5 @@
+name: libgamespyquery
+version: 1.0.0
+antigen: mmm545\libgamespyquery
+php: 7.0
+author: mmm545
