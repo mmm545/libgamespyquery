@@ -27,6 +27,6 @@ $query->get("maxplayers"); // Max number of players
 $query->get("whitelist"); // On if whitelist is turned on, otherwise off
 $query->get("hostip"); // Host ip
 $query->get("hostport"); // Host port
-$query->get("players"); // List of online players
+$query->get("players"); // List of online players names
 ```
 In case you want to get the raw response, you can use `getStatusRaw()`
