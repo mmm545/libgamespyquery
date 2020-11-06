@@ -10,8 +10,11 @@ Then we query the server
 ```php
 $query->query();
 ```
-You can set a timeout, but this argument is optional\
-The query function will throw a GameSpyQueryException if the destination IP and port can't be queried, so you need to surround it with a try-catch block\
+You can also set a timeout in seconds (optional)
+```php
+$query->query(5);
+```
+The `query()` function will throw a GameSpyQueryException if the destination IP and port can't be queried, so you need to surround it with a try-catch block\
 If everything worked correctly, you can use the `get()` function to get some info about the server\
 List of the data you can get:
 ```php
