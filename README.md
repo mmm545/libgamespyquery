@@ -1,6 +1,6 @@
 # libgamespyquery
 A query virion for Pocketmine-MP\
-This plugin uses GS4 to query servers which provides more info. Servers that don't have GS4 supported/enabled can't be queried using this virion, so you need to use another virion such as [libpmquery](https://github.com/jasonwynn10/libpmquery)
+This virion uses GS4 to query servers which provides more info. Servers that don't have GS4 supported/enabled can't be queried using this virion, so you need to use another virion such as [libpmquery](https://github.com/jasonwynn10/libpmquery)
 ## Usage
 First you create a new GameSpyQuery instance, first argument is the IP address to query, second argument is the port to query
 ```php
