@@ -9,16 +9,6 @@ use function strlen;
 use function substr;
 use function fread;
 
-/*
- * The reason behind this is that the byte order of packing an int to a binary string is
- * machine dependant, and pack() doesn't support a big endian int format. So in case the
- * byte order wasn't big endian i can just reverse the string and it would work.
- * Also don't ask me why i used `define` instead of `const`
- */
-
-define('BIG_ENDIAN', pack("L", 1) === pack("N", 1));
-
-
 /**
  * A class used to query servers and get info from them.
  * Servers that don't have GS4 supported/enabled can't be queried
@@ -87,7 +77,7 @@ class GameSpyQuery
     private function handshake($sessionId) : string{
         $command = pack("n", 65277);
         $command .= pack("c", 9);
-        $command .= BIG_ENDIAN ? pack("i", $sessionId) : strrev(pack("i", $sessionId));
+        $command .= pack("N", $sessionId);
         $command .= pack("xxxx");
 
         $length = strlen($command);
@@ -113,8 +103,8 @@ class GameSpyQuery
     private function retrieveStatus(int $sessionId, int $challengeToken) : string{
         $command = pack("n", 65277);
         $command .= pack("c", 0);
-        $command .= BIG_ENDIAN ? pack("i", $sessionId) : strrev(pack("i", $sessionId));
-        $command .= BIG_ENDIAN ? pack("i", $challengeToken) : strrev(pack("i", $challengeToken));
+        $command .= pack("N", $sessionId);
+        $command .= pack("N", $challengeToken);
         $command .= pack("xxxx");
 
         $length = strlen($command);
@@ -159,6 +149,7 @@ class GameSpyQuery
                     return $data[$pos + 1];
                 }
                 return false;
+                
         }
     }
 
