@@ -100,7 +100,7 @@ class GameSpyQuery
     /**
      * @param int $sessionId
      * @param int $challengeToken
-     * @return string
+     * @return string|bool
      * @throws GameSpyQueryException
      */
     private function retrieveStatus(int $sessionId, int $challengeToken){
