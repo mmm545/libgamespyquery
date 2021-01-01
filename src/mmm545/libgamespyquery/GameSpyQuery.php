@@ -63,18 +63,21 @@ class GameSpyQuery
         $challengeToken = $this->handshake($sessionId);
 
         if(empty($challengeToken)){
-            throw new GameSpyQueryException("Response is empty"); //tbh i think i'm abusing exceptions
+            throw new GameSpyQueryException("Failed to retrieve challenge token"); //tbh i think i'm abusing exceptions
         }
 
         $this->statusRaw = $this->retrieveStatus($sessionId, (int)$challengeToken);
+        if(empty($this->statusRaw)){
+            throw new GameSpyQueryException("Failed to retrieve server info");
+        }
     }
 
     /**
      * @param $sessionId
-     * @return string
+     * @return string|bool
      * @throws GameSpyQueryException
      */
-    private function handshake($sessionId) : string{
+    private function handshake($sessionId){
         $command = pack("n", 65277);
         $command .= pack("c", 9);
         $command .= pack("N", $sessionId);
@@ -100,7 +103,7 @@ class GameSpyQuery
      * @return string
      * @throws GameSpyQueryException
      */
-    private function retrieveStatus(int $sessionId, int $challengeToken) : string{
+    private function retrieveStatus(int $sessionId, int $challengeToken){
         $command = pack("n", 65277);
         $command .= pack("c", 0);
         $command .= pack("N", $sessionId);
@@ -124,7 +127,7 @@ class GameSpyQuery
     /**
      * Gets data by it's key
      * @param string $key The key of the data you want to get
-     * @return string|string[] The return can be either a string or an array, depending on what data you want to get. Returns false if the key can't be found
+     * @return string|string[]|bool The return can be either a string or an array, depending on what data you want to get. Returns false if the key can't be found
      */
     public function get(string $key){
         if(!isset($this->statusRaw)){
@@ -136,7 +139,11 @@ class GameSpyQuery
 
         switch($key){
             case "players":
-                return explode("\x00", substr($status[1], 0, -2));
+                $players = substr($status[1], 0, -2);
+                if($players === false){
+                    return false;
+                }
+                return explode("\x00", $players);
 
             case "plugins":
                 $plugins = $data[array_search("plugins", $data) + 1];
