@@ -139,8 +139,8 @@ class GameSpyQuery
                 return explode("\x00", substr($status[1], 0, -2));
 
             case "plugins":
-                $plugins = $data[array_search("plugins", $data) + 1]; // calling getValue("plugins") here will cause an infinite loop
-                $plugins = explode("; ", str_replace($this->getValue("server_engine").": ", "", $plugins));
+                $plugins = $data[array_search("plugins", $data) + 1];
+                $plugins = explode("; ", str_replace($this->get("server_engine").": ", "", $plugins));
                 return $plugins;
 
             default:
