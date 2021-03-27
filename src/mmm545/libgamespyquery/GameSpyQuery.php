@@ -44,8 +44,8 @@ class GameSpyQuery
 
     /**
      * Queries the destination IP and port.
-     * @param int $timeout The connection timeout
-     * @throws GameSpyQueryException If the destination IP and port cannot be queried
+     * @param int $timeout The connection timeout.
+     * @throws GameSpyQueryException If the destination IP and port cannot be queried.
      */
     public function query(int $timeout = 2){
         $this->socket = @fsockopen('udp://'.$this->ip, $this->port, $errno, $errstr, $timeout);
