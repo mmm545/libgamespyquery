@@ -21,15 +21,19 @@ class GameSpyQuery
      * @var string $ip
      * IP to query
      */
-    private $ip;
+    private string $ip;
 
     /**
      * @var int $port
      * Port to query
      */
-    private $port;
+    private int $port;
 
-    private $statusRaw;
+    /**
+     * @var string $statusRaw
+     * The raw status data
+     */
+    private string $statusRaw;
 
     /**
      * @param string $ip IP to query
@@ -125,7 +129,7 @@ class GameSpyQuery
     }
 
     /**
-     * Gets data by it's key
+     * Gets data by its key
      * @param string $key The key of the data you want to get
      * @return string|string[]|bool The return can be either a string or an array, depending on what data you want to get. Returns false if the key can't be found
      */
@@ -161,10 +165,10 @@ class GameSpyQuery
     }
 
     /**
-     * @return string The raw status response from the server, or false if the status data is null
+     * @return string The raw status response from the server
      */
-    public function getStatusRaw(){
-        return isset($this->statusRaw) ? $this->statusRaw : false;
+    public function getStatusRaw(): string{
+        return $this->statusRaw;
     }
 
     /**
