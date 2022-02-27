@@ -28,8 +28,6 @@ class GameSpyQuery
      * Port to query
      */
     private $port;
-    
-    private $socket;
 
     private $statusRaw;
 
@@ -37,9 +35,10 @@ class GameSpyQuery
      * @param string $ip IP to query
      * @param int $port Port to query
      */
-    public function __construct(string $ip, int $port){
+    public function __construct(string $ip, int $port, $statusRaw){
         $this->ip = $ip;
         $this->port = $port;
+        $this->statusRaw = $statusRaw;
     }
 
     /**
@@ -47,29 +46,30 @@ class GameSpyQuery
      * @param int $timeout The connection timeout.
      * @throws GameSpyQueryException If the destination IP and port cannot be queried.
      */
-    public function query(int $timeout = 2){
-        $this->socket = @fsockopen('udp://'.$this->ip, $this->port, $errno, $errstr, $timeout);
+    public static function query(string $ip, int $port, int $timeout = 2) : GameSpyQuery{
+        $socket = @fsockopen('udp://'.$ip, $port, $errno, $errstr, $timeout);
 
-        if($errno and $this->socket !== false) {
-            fclose($this->socket);
+        if($errno and $socket !== false) {
+            fclose($socket);
             throw new GameSpyQueryException($errstr, $errno);
         }
-        elseif($this->socket === false) {
+        elseif($socket === false) {
             throw new GameSpyQueryException($errstr, $errno);
         }
-        stream_set_timeout($this->socket, $timeout);
+        stream_set_timeout($socket, $timeout);
         $sessionId = rand();
 
-        $challengeToken = $this->handshake($sessionId);
+        $challengeToken = self::handshake($socket, $sessionId);
 
         if(empty($challengeToken)){
             throw new GameSpyQueryException("Failed to retrieve challenge token"); //tbh i think i'm abusing exceptions
         }
 
-        $this->statusRaw = $this->retrieveStatus($sessionId, (int)$challengeToken);
-        if(empty($this->statusRaw)){
+        $statusRaw = self::retrieveStatus($socket, $sessionId, (int)$challengeToken);
+        if(empty($statusRaw)){
             throw new GameSpyQueryException("Failed to retrieve server info");
         }
+        return new self($ip, $port, $statusRaw);
     }
 
     /**
@@ -77,18 +77,18 @@ class GameSpyQuery
      * @return string|bool
      * @throws GameSpyQueryException
      */
-    private function handshake($sessionId){
+    private static function handshake($socket, $sessionId){
         $command = pack("n", 65277);
         $command .= pack("c", 9);
         $command .= pack("N", $sessionId);
         $command .= pack("xxxx");
 
         $length = strlen($command);
-        if ($length !== fwrite($this->socket, $command, $length)){
+        if ($length !== fwrite($socket, $command, $length)){
             throw new GameSpyQueryException("Failed to write to socket");
         }
 
-        $response = fread($this->socket, 4096);
+        $response = fread($socket, 4096);
 
         if($response === false){
             throw new GameSpyQueryException("Failed to read from socket");
@@ -103,7 +103,7 @@ class GameSpyQuery
      * @return string|bool
      * @throws GameSpyQueryException
      */
-    private function retrieveStatus(int $sessionId, int $challengeToken){
+    private static function retrieveStatus($socket, int $sessionId, int $challengeToken){
         $command = pack("n", 65277);
         $command .= pack("c", 0);
         $command .= pack("N", $sessionId);
@@ -111,11 +111,11 @@ class GameSpyQuery
         $command .= pack("xxxx");
 
         $length = strlen($command);
-        if ($length !== fwrite($this->socket, $command, $length)){
+        if ($length !== fwrite($socket, $command, $length)){
             throw new GameSpyQueryException("Failed to write to socket");
         }
 
-        $response = fread($this->socket, 4096);
+        $response = fread($socket, 4096);
 
         if($response === false){
             throw new GameSpyQueryException("Failed to read from socket");
@@ -156,7 +156,7 @@ class GameSpyQuery
                     return $data[$pos + 1];
                 }
                 return false;
-                
+
         }
     }
 
