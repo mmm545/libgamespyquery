@@ -21,28 +21,25 @@ class GameSpyQuery
      * @var string $ip
      * IP to query
      */
-    private string $ip;
+    private $ip;
 
     /**
      * @var int $port
      * Port to query
      */
-    private int $port;
+    private $port;
+    
+    private $socket;
 
-    /**
-     * @var string $statusRaw
-     * The raw status data
-     */
-    private string $statusRaw;
+    private $statusRaw;
 
     /**
      * @param string $ip IP to query
      * @param int $port Port to query
      */
-    public function __construct(string $ip, int $port, $statusRaw){
+    public function __construct(string $ip, int $port){
         $this->ip = $ip;
         $this->port = $port;
-        $this->statusRaw = $statusRaw;
     }
 
     /**
@@ -50,30 +47,29 @@ class GameSpyQuery
      * @param int $timeout The connection timeout.
      * @throws GameSpyQueryException If the destination IP and port cannot be queried.
      */
-    public static function query(string $ip, int $port, int $timeout = 2) : GameSpyQuery{
-        $socket = @fsockopen('udp://'.$ip, $port, $errno, $errstr, $timeout);
+    public function query(int $timeout = 2){
+        $this->socket = @fsockopen('udp://'.$this->ip, $this->port, $errno, $errstr, $timeout);
 
-        if($errno and $socket !== false) {
-            fclose($socket);
+        if($errno and $this->socket !== false) {
+            fclose($this->socket);
             throw new GameSpyQueryException($errstr, $errno);
         }
-        elseif($socket === false) {
+        elseif($this->socket === false) {
             throw new GameSpyQueryException($errstr, $errno);
         }
-        stream_set_timeout($socket, $timeout);
+        stream_set_timeout($this->socket, $timeout);
         $sessionId = rand();
 
-        $challengeToken = self::handshake($socket, $sessionId);
+        $challengeToken = $this->handshake($sessionId);
 
         if(empty($challengeToken)){
             throw new GameSpyQueryException("Failed to retrieve challenge token"); //tbh i think i'm abusing exceptions
         }
 
-        $statusRaw = self::retrieveStatus($socket, $sessionId, (int)$challengeToken);
-        if(empty($statusRaw)){
+        $this->statusRaw = $this->retrieveStatus($sessionId, (int)$challengeToken);
+        if(empty($this->statusRaw)){
             throw new GameSpyQueryException("Failed to retrieve server info");
         }
-        return new self($ip, $port, $statusRaw);
     }
 
     /**
@@ -81,18 +77,18 @@ class GameSpyQuery
      * @return string|bool
      * @throws GameSpyQueryException
      */
-    private static function handshake($socket, $sessionId){
+    private function handshake($sessionId){
         $command = pack("n", 65277);
         $command .= pack("c", 9);
         $command .= pack("N", $sessionId);
         $command .= pack("xxxx");
 
         $length = strlen($command);
-        if ($length !== fwrite($socket, $command, $length)){
+        if ($length !== fwrite($this->socket, $command, $length)){
             throw new GameSpyQueryException("Failed to write to socket");
         }
 
-        $response = fread($socket, 4096);
+        $response = fread($this->socket, 4096);
 
         if($response === false){
             throw new GameSpyQueryException("Failed to read from socket");
@@ -107,7 +103,7 @@ class GameSpyQuery
      * @return string|bool
      * @throws GameSpyQueryException
      */
-    private static function retrieveStatus($socket, int $sessionId, int $challengeToken){
+    private function retrieveStatus(int $sessionId, int $challengeToken){
         $command = pack("n", 65277);
         $command .= pack("c", 0);
         $command .= pack("N", $sessionId);
@@ -115,11 +111,11 @@ class GameSpyQuery
         $command .= pack("xxxx");
 
         $length = strlen($command);
-        if ($length !== fwrite($socket, $command, $length)){
+        if ($length !== fwrite($this->socket, $command, $length)){
             throw new GameSpyQueryException("Failed to write to socket");
         }
 
-        $response = fread($socket, 4096);
+        $response = fread($this->socket, 4096);
 
         if($response === false){
             throw new GameSpyQueryException("Failed to read from socket");
@@ -129,7 +125,7 @@ class GameSpyQuery
     }
 
     /**
-     * Gets data by its key
+     * Gets data by it's key
      * @param string $key The key of the data you want to get
      * @return string|string[]|bool The return can be either a string or an array, depending on what data you want to get. Returns false if the key can't be found
      */
@@ -160,15 +156,15 @@ class GameSpyQuery
                     return $data[$pos + 1];
                 }
                 return false;
-
+                
         }
     }
 
     /**
-     * @return string The raw status response from the server
+     * @return string The raw status response from the server, or false if the status data is null
      */
-    public function getStatusRaw(): string{
-        return $this->statusRaw;
+    public function getStatusRaw(){
+        return isset($this->statusRaw) ? $this->statusRaw : false;
     }
 
     /**
@@ -179,9 +175,23 @@ class GameSpyQuery
     }
 
     /**
+     * @param string $ip
+     */
+    public function setIp(string $ip): void{
+        $this->ip = $ip;
+    }
+
+    /**
      * @return int
      */
     public function getPort(): int{
         return $this->port;
+    }
+
+    /**
+     * @param int $port
+     */
+    public function setPort(int $port): void{
+        $this->port = $port;
     }
 }
